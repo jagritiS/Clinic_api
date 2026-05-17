@@ -10,8 +10,9 @@ function PatientDashboard() {
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [success, setSuccess] = useState("");
+
 
   const navigate = useNavigate();
 
