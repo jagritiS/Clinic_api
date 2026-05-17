@@ -11,12 +11,13 @@ function PatientDashboard() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
   const navigate = useNavigate();
 
   // Fetch appointments
   useEffect(() => {
-    API.get("clinic/appointment/")
+    API.get("clinic/appointments/")
       .then((res) => setAppointments(res.data))
       .catch((err) => console.log(err));
   }, []);
@@ -68,6 +69,35 @@ function PatientDashboard() {
     setEditMode(false);
   };
 
+  //appoinment cancel update
+  const patientStatus = {
+    upcoming:  ["pending", "approved"],
+    completed: ["completed"],
+    cancelled: ["cancelled"],
+  };
+ const filtered = appointments.filter((a) => {
+    if (activeTab === "all") return true;
+    return patientStatus[activeTab].includes(a.status);
+  });
+
+  const countTab = (tab) => {
+    if (tab === "all") return appointments.length;
+    return appointments.filter((a) =>
+      patientStatus[tab].includes(a.status)
+    ).length;
+  };
+
+  // Cancel appointment
+  const handleCancel = async (id) => {
+    if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+    try {
+      await API.patch(`clinic/appointments/${id}/`, { status: "cancelled" });
+      const res = await API.get("clinic/appointments/");
+      setAppointments(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
   return (
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -327,8 +357,31 @@ function PatientDashboard() {
         </div>
 
         <div className="card-body">
-          {appointments.length === 0 ? (
-            <p className="text-muted">No appointments yet.</p>
+            <div className="d-flex gap-2 mb-3 flex-wrap">
+            {[
+              { label: "All",       value: "all"       },
+              { label: "Upcoming",  value: "upcoming"  },
+              { label: "Completed", value: "completed" },
+              { label: "Cancelled", value: "cancelled" },
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                className={`btn btn-sm ${
+                  activeTab === tab.value
+                    ? "btn-primary"
+                    : "btn-outline-primary"
+                }`}
+                onClick={() => setActiveTab(tab.value)}
+              >
+               {tab.label}{" "}
+                <span className="badge bg-white text-primary ms-1">
+                  {countTab(tab.value)}
+                </span>
+              </button>
+            ))}
+          </div>
+          {filtered.length === 0 ? (
+            <p className="text-muted">No {activeTab} appointments yet.</p>
           ) : (
             <div className="table-responsive">
               <table className="table table-bordered table-hover align-middle">
@@ -338,15 +391,47 @@ function PatientDashboard() {
                     <th>Doctor</th>
                     <th>Date</th>
                     <th>Time</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {appointments.map((a, index) => (
+                  {filtered.map((a, index) => (
                     <tr key={a.id}>
                       <td>{index + 1}</td>
                       <td>{a.doctor_name || a.doctor}</td>
                       <td>{a.date}</td>
                       <td>{a.time}</td>
+                       <td>
+                        <span className={`badge ${
+                          a.status === "completed" ? "bg-success" :
+                          a.status === "cancelled" ? "bg-danger"  :
+                          a.status === "approved"  ? "bg-primary" :
+                          a.status === "rejected"  ? "bg-dark"    :
+                          "bg-warning text-dark"
+                        }`}>
+                          {a.status}
+                        </span>
+                      </td>
+                      <td>
+                        {["pending", "approved"].includes(a.status) && (
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleCancel(a.id)}
+                          >
+                            Cancel
+                          </button>
+                        )}
+                        {a.status === "completed" && (
+                          <span className="text-success fw-semibold">✓ Done</span>
+                        )}
+                        {a.status === "cancelled" && (
+                          <span className="text-danger fw-semibold">✗ Cancelled</span>
+                        )}
+                        {a.status === "rejected" && (
+                          <span className="text-dark fw-semibold">✗ Rejected</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
