@@ -1,0 +1,188 @@
+------>>> clinic migration
+1. python3 manage.py sqlmigrate clinic 0001
+-- Create model Doctor
+--
+CREATE TABLE "clinic_doctor" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "specialization" varchar(100) NOT NULL, "experience" varchar(100) NOT NULL, "bio" text NOT NULL, "is_available" bool NOT NULL, "created_at" datetime NOT NULL, "user_id" bigint NOT NULL UNIQUE REFERENCES "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED);
+--
+-- Create model Patient
+--
+CREATE TABLE "clinic_patient" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "age" integer NULL, "gender" varchar(10) NOT NULL, "phone" varchar(15) NOT NULL, "height" real NULL, "weight" real NULL, "address" text NOT NULL, "blood_group" varchar(5) NOT NULL, "medical_conditions" text NOT NULL, "created_at" datetime NOT NULL, "user_id" bigint NOT NULL UNIQUE REFERENCES "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED);
+--
+-- Create model Appointment
+--
+CREATE TABLE "clinic_appointment" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "date" date NOT NULL, "time" time NOT NULL, "description" text NOT NULL, "status" varchar(20) NOT NULL, "created_at" datetime NOT NULL, "updated_at" datetime NOT NULL, "doctor_id" bigint NOT NULL REFERENCES "clinic_doctor" ("id") DEFERRABLE INITIALLY DEFERRED, "patient_id" bigint NOT NULL REFERENCES "clinic_patient" ("id") DEFERRABLE INITIALLY DEFERRED);
+CREATE INDEX "clinic_appointment_doctor_id_a005cb8d" ON "clinic_appointment" ("doctor_id");
+CREATE INDEX "clinic_appointment_patient_id_dd04daf6" ON "clinic_appointment" ("patient_id");
+COMMIT;
+=============================================================================================================================================
+
+2. python3 manage.py sqlmigrate clinic 0002
+Add field gender to doctor
+--
+CREATE TABLE "new__clinic_doctor" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "gender" varchar(10) NOT NULL, "specialization" varchar(100) NOT NULL, "experience" varchar(100) NOT NULL, "bio" text NOT NULL, "is_available" bool NOT NULL, "created_at" datetime NOT NULL, "user_id" bigint NOT NULL UNIQUE REFERENCES "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED);
+INSERT INTO "new__clinic_doctor" ("id", "specialization", "experience", "bio", "is_available", "created_at", "user_id", "gender") SELECT "id", "specialization", "experience", "bio", "is_available", "created_at", "user_id", 'other' FROM "clinic_doctor";
+DROP TABLE "clinic_doctor";
+ALTER TABLE "new__clinic_doctor" RENAME TO "clinic_doctor";
+COMMIT;
+=============================================================================================================================================
+CREATE TABLE "new__clinic_doctor" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                   "gender" varchar(10) NOT NULL,
+                                    "specialization" varchar(100) NOT NULL,
+                                    "experience" varchar(100) NOT NULL,
+                                    "bio" text NOT NULL,
+                                    "is_available" bool NOT NULL,
+                                    "created_at" datetime NOT NULL,
+                                    "user_id" bigint NOT NULL UNIQUE REFERENCES
+                                    "accounts_user"
+                                    ("id") DEFERRABLE INITIALLY DEFERRED);
+INSERT INTO "new__clinic_doctor" ("id", "specialization", "experience",
+                                  "bio", "is_available", "created_at",
+                                  "user_id", "gender")
+
+=============================================================================================================================================
+
+3.python3 manage.py sqlmigrate clinic 0003
+--
+-- Add field phone to doctor
+--
+CREATE TABLE "new__clinic_doctor" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "phone" varchar(15) NOT NULL, "specialization" varchar(100) NOT NULL, "experience" varchar(100) NOT NULL, "bio" text NOT NULL, "is_available" bool NOT NULL, "created_at" datetime NOT NULL, "user_id" bigint NOT NULL UNIQUE REFERENCES "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED, "gender" varchar(10) NOT NULL);
+INSERT INTO "new__clinic_doctor" ("id", "specialization", "experience", "bio", "is_available", "created_at", "user_id", "gender", "phone") SELECT "id", "specialization", "experience", "bio", "is_available", "created_at", "user_id", "gender", '' FROM "clinic_doctor";
+DROP TABLE "clinic_doctor";
+ALTER TABLE "new__clinic_doctor" RENAME TO "clinic_doctor";
+COMMIT;
+=============================================================================================================================================
+CREATE TABLE "new__clinic_doctor" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                   "gender" varchar(10) NOT NULL,
+                                    "specialization" varchar(100) NOT NULL,
+                                    "experience" varchar(100) NOT NULL,
+                                    "bio" text NOT NULL,
+                                    "is_available" bool NOT NULL,
+                                    "created_at" datetime NOT NULL,
+                                    "user_id" bigint NOT NULL UNIQUE REFERENCES
+                                    "accounts_user"
+                                    ("id") DEFERRABLE INITIALLY DEFERRED);
+                                    "phone" varchar(15) NOT NULL,             # add this
+
+INSERT INTO "new__clinic_doctor" ("id", "specialization", "experience",
+                                  "bio", "is_available", "created_at",
+                                  "user_id", "gender", "phone")
+
+=============================================================================================================================================
+
+4.python3 manage.py sqlmigrate clinic 0004
+BEGIN;
+--
+-- Create model Availability
+--
+CREATE TABLE "clinic_availability" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "day" varchar(15) NOT NULL, "start_time" time NOT NULL, "end_time" time NOT NULL, "created_at" datetime NOT NULL, "updated_at" datetime NOT NULL, "doctor_id" bigint NOT NULL REFERENCES "clinic_doctor" ("id") DEFERRABLE INITIALLY DEFERRED);
+CREATE UNIQUE INDEX "clinic_availability_doctor_id_day_8a95eb0e_uniq" ON "clinic_availability" ("doctor_id", "day");
+CREATE INDEX "clinic_availability_doctor_id_52624222" ON "clinic_availability" ("doctor_id");
+COMMIT;
+=============================================================================================================================================
+--> Others as it is!
+CREATE TABLE "clinic_availability" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                    "day" varchar(15) NOT NULL,
+                                    "start_time" time NOT NULL,
+                                    "end_time" time NOT NULL,
+                                    "created_at" datetime NOT NULL,
+                                    "updated_at" datetime NOT NULL,
+                                    "doctor_id" bigint NOT NULL REFERENCES
+                                    "clinic_doctor"
+                                    ("id") DEFERRABLE INITIALLY DEFERRED);
+=============================================================================================================================================
+5.python3 manage.py sqlmigrate clinic 0005
+BEGIN;
+--
+-- Add field comments to appointment
+--
+ALTER TABLE "clinic_appointment" ADD COLUMN "comments" text NULL;
+--
+-- Add field diagnosis to appointment
+--
+ALTER TABLE "clinic_appointment" ADD COLUMN "diagnosis" text NULL;
+--
+-- Add field prescription to appointment
+--
+ALTER TABLE "clinic_appointment" ADD COLUMN "prescription" text NULL;
+--
+-- Add field qualification to doctor
+--
+CREATE TABLE "new__clinic_doctor" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "specialization" varchar(100) NOT NULL, "experience" varchar(100) NOT NULL, "bio" text NOT NULL, "is_available" bool NOT NULL, "created_at" datetime NOT NULL, "user_id" bigint NOT NULL UNIQUE REFERENCES "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED, "gender" varchar(10) NOT NULL, "phone" varchar(15) NOT NULL, "qualification" varchar(100) NOT NULL);
+INSERT INTO "new__clinic_doctor" ("id", "specialization", "experience", "bio", "is_available", "created_at", "user_id", "gender", "phone", "qualification") SELECT "id", "specialization", "experience", "bio", "is_available", "created_at", "user_id", "gender", "phone", '' FROM "clinic_doctor";
+DROP TABLE "clinic_doctor";
+ALTER TABLE "new__clinic_doctor" RENAME TO "clinic_doctor";
+--
+-- Create model DoctorAvailability
+--
+CREATE TABLE "clinic_doctoravailability" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "day" varchar(20) NOT NULL, "start_time" time NULL, "end_time" time NULL, "is_available" bool NOT NULL, "doctor_id" bigint NOT NULL REFERENCES "clinic_doctor" ("id") DEFERRABLE INITIALLY DEFERRED);
+--
+-- Delete model Availability
+--
+DROP TABLE "clinic_availability";
+CREATE INDEX "clinic_doctoravailability_doctor_id_a366f5ce" ON "clinic_doctoravailability" ("doctor_id");
+COMMIT;
+=============================================================================================================================================
+CREATE TABLE "new__clinic_doctor" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                   "gender" varchar(10) NOT NULL,
+                                    "specialization" varchar(100) NOT NULL,
+                                    "experience" varchar(100) NOT NULL,
+                                    "bio" text NOT NULL,
+                                    "is_available" bool NOT NULL,
+                                    "created_at" datetime NOT NULL,
+                                    "user_id" bigint NOT NULL UNIQUE REFERENCES
+                                    "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED);
+                                    "phone" varchar(15) NOT NULL,
+                                    "qualification" varchar(100) NOT NULL);   #add this
+
+---> Drop clinic_availability table and create clinic_doctoravailability
+
+CREATE TABLE "clinic_doctoravailability" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                          "day" varchar(20) NOT NULL,
+                                          "start_time" time NULL,
+                                          "end_time" time NULL,
+                                          "is_available" bool NOT NULL,
+                                          "doctor_id" bigint NOT NULL REFERENCES
+                                          "clinic_doctor" ("id") DEFERRABLE INITIALLY DEFERRED);
+=============================================================================================================================================
+ --->accounts migrations
+python3 manage.py sqlmigrate accounts 0001
+BEGIN;
+--
+-- Create model User
+--
+CREATE TABLE "accounts_user" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "password" varchar(128) NOT NULL, "last_login" datetime NULL, "is_superuser" bool NOT NULL, "username" varchar(150) NOT NULL UNIQUE, "first_name" varchar(150) NOT NULL, "last_name" varchar(150) NOT NULL, "email" varchar(254) NOT NULL, "is_staff" bool NOT NULL, "is_active" bool NOT NULL, "date_joined" datetime NOT NULL, "role" varchar(10) NOT NULL);
+CREATE TABLE "accounts_user_groups" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "user_id" bigint NOT NULL REFERENCES "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED, "group_id" integer NOT NULL REFERENCES "auth_group" ("id") DEFERRABLE INITIALLY DEFERRED);
+CREATE TABLE "accounts_user_user_permissions" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "user_id" bigint NOT NULL REFERENCES "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED, "permission_id" integer NOT NULL REFERENCES "auth_permission" ("id") DEFERRABLE INITIALLY DEFERRED);
+CREATE UNIQUE INDEX "accounts_user_groups_user_id_group_id_59c0b32f_uniq" ON "accounts_user_groups" ("user_id", "group_id");
+CREATE INDEX "accounts_user_groups_user_id_52b62117" ON "accounts_user_groups" ("user_id");
+CREATE INDEX "accounts_user_groups_group_id_bd11a704" ON "accounts_user_groups" ("group_id");
+CREATE UNIQUE INDEX "accounts_user_user_permissions_user_id_permission_id_2ab516c2_uniq" ON "accounts_user_user_permissions" ("user_id", "permission_id");
+CREATE INDEX "accounts_user_user_permissions_user_id_e4f0a161" ON "accounts_user_user_permissions" ("user_id");
+CREATE INDEX "accounts_user_user_permissions_permission_id_113bb443" ON "accounts_user_user_permissions" ("permission_id");
+COMMIT;
+=============================================================================================================================================
+
+CREATE TABLE "accounts_user" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                              "password" varchar(128) NOT NULL,
+                              "last_login" datetime NULL,
+                              "is_superuser" bool NOT NULL,
+                              "username" varchar(150) NOT NULL UNIQUE,
+                              "first_name" varchar(150) NOT NULL,
+                              "last_name" varchar(150) NOT NULL,
+                              "email" varchar(254) NOT NULL,
+                              "is_staff" bool NOT NULL, "is_active" bool NOT NULL,
+                              "date_joined" datetime NOT NULL,
+                              "role" varchar(10) NOT NULL);
+
+CREATE TABLE "accounts_user_groups" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                     "user_id" bigint NOT NULL REFERENCES
+                                     "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED,
+                                     "group_id" integer NOT NULL REFERENCES
+                                     "auth_group" ("id") DEFERRABLE INITIALLY DEFERRED);
+                                     
+CREATE TABLE "accounts_user_user_permissions" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                               "user_id" bigint NOT NULL REFERENCES
+                                               "accounts_user" ("id") DEFERRABLE INITIALLY DEFERRED,
+                                               "permission_id" integer NOT NULL REFERENCES
+                                               "auth_permission" ("id") DEFERRABLE INITIALLY DEFERRED);
+=============================================================================================================================================
