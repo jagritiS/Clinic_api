@@ -186,3 +186,104 @@ CREATE TABLE "accounts_user_user_permissions" ("id" integer NOT NULL PRIMARY KEY
                                                "permission_id" integer NOT NULL REFERENCES
                                                "auth_permission" ("id") DEFERRABLE INITIALLY DEFERRED);
 =============================================================================================================================================
+
+Converting the method into sql queries
+================================ accounts model.py ========================================
+1.register ---> Post method
+
+--->INSERT INTO users (username, email, password, role, is_active, is_staff, is_superuser, date_joined)
+    VALUES ('testtt1', 'test@example.com', 'pbkdf2_sha256$...hashed...', 'doctor',TRUE, FALSE, FALSE, NOW());
+
+--->INSERT INTO clinic_doctor(user_id, specialization, experience, gender, phone)
+    VALUES (
+    (SELECT id FROM users WHERE username = 'miraj7'),
+    'Heart',
+     3,
+    'male',
+    '9800000000'
+    );
+
+--->INSERT INTO clinic_patient(user_id, age, gender, phone)
+    VALUES (
+    (SELECT id FROM users WHERE username = 'mira23'),
+    23,
+    'female',
+    '9811111111'
+);
+
+2.1. profile ----> Get method
+   #get user info only
+---> SELECT u.id, u.username, u.email,
+           CASE
+                WHEN u.is_superuser = TRUE THEN 'admin'
+                ELSE u.role
+           END AS effective_role
+      FROM users u
+      WHERE u.id = 1;     ----authenticated user's ID
+
+ -- #If role = 'doctor': join with doctor table
+ ---> SELECT u.username, u.email,
+          CASE WHEN u.is_superuser THEN 'admin' ELSE u.role END AS role,
+          d.specialization, d.experience, d.gender, d.phone, d.is_available
+      FROM users u
+      INNER JOIN clinic_doctor d ON d.user_id = u.id
+      WHERE u.id = 1;
+
+  -- #If role = 'patient': join with patient table
+  ---> SELECT u.username, u.email,
+             CASE WHEN u.is_superuser THEN 'admin' ELSE  u.role END AS role,
+             p.age, p.gender, p.phone, p.blood_group
+       FROM users u
+       INNER JOIN clinic_patient p ON p.user_id =u.id
+       WHERE u.id =1;
+
+2.2 profile ----> Put method
+ --->UPDATE users
+     SET
+        username = 'new_username',
+        email = 'new_email@gmail.com'
+     WHERE id = 1;
+
+     UPDATE clinic_doctor
+     SET
+         specialization = 'Neurology',
+         experience     = 7,
+         gender         = 'female',
+         phone          = '9800000001',
+         is_available   = TRUE
+     WHERE user_id = 2;
+
+     UPDATE clinic_patient
+     SET
+         age          = 25,
+         gender       = 'female',
+         phone        = '9811111112',
+         blood_group  = 'O+'
+     WHERE user_id = 1;
+
+ 3. user_list get method
+  ---> SELECT id, username, role
+       FROM users;
+
+ 4. DELETE method
+ #delete doctor profile then user
+ ---DELETE FROM clinic_doctor WHERE user_id=1;
+    DELETE FROM users WHERE id = 1 ;
+
+ #delete patient profile then user
+     DELETE FROM clinic_patient WHERE user_id = 1;
+     DELETE FROM users WHERE id =  1;
+
+ #use cascade if defined on fk
+     DELETE FROM users WHERE id = 1;
+     -- ↑ automatically deletes clinic_doctor / clinic_patient rows if ON DELETE CASCADE
+
+ Overall Summary
+
+ | View         | Method   | SQL Operation     | Tables Affected                               |
+| ------------ | -------- | ----------------- | --------------------------------------------- |
+| `register`   | `POST`   | `INSERT`          | `users` + `clinic_doctor` or `clinic_patient` |
+| `profile`    | `GET`    | `SELECT` + `JOIN` | `users` + `clinic_doctor` or `clinic_patient` |
+| `profile`    | `PUT`    | `UPDATE`          | `users` + `clinic_doctor` or `clinic_patient` |
+| `users_list` | `GET`    | `SELECT`          | `users` only                                  |
+| `(implicit)` | `DELETE` | `DELETE`          | `users` + related profile table               |
