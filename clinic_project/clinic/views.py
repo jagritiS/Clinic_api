@@ -16,7 +16,7 @@ from .serializers import (
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def doctor_list(request):
-    doctors = Doctor.objects.select_related('user').all()
+    doctors = Doctor.objects.select_related('user').all()  #eager loading
     serializer = DoctorSerializer(doctors, many=True)
     return Response(serializer.data)
 

@@ -10,25 +10,29 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3#@%&&8e448wkk+-chpgpjmz*c@j=!-wdfd2(^ptuzc%jf0zju'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-3#@%&&8e448wkk+-chpgpjmz*c@j=!-wdfd2(^ptuzc%jf0zju')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
-
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 AUTH_USER_MODEL = 'accounts.User'
@@ -93,15 +97,14 @@ WSGI_APPLICATION = 'clinic_project.wsgi.application'
 CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000"]
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 DATABASES = {
    'default': {
        'ENGINE': 'django.db.backends.postgresql',
-       'NAME': 'clinic',
-       'USER': 'postgres',
-       'PASSWORD': '',
-       'HOST': 'localhost',
-       'PORT': '5432',
+       'NAME': os.getenv('DB_NAME', 'clinic'),
+       'USER': os.getenv('DB_USER', 'postgres'),
+       'PASSWORD': os.getenv('DB_PASSWORD', ''),
+       'HOST': os.getenv('DB_HOST', 'db'),
+       'PORT': os.getenv('DB_PORT', '5432'),
    }
 }
 
