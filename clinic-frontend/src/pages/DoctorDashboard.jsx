@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API, { getAppointmentStats } from "../services/api";
 import AppointmentTable from "../components/appointments/AppointmentTable";
-import AvailabilityManager from "../Components/availability/AvailabilityManager";
+import AvailabilityManager from "../components/availability/AvailabilityManager";
 import { useAuth } from "../components/AuthManager";
 import { Link } from "react-router-dom";
 
