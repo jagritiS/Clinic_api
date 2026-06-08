@@ -1,21 +1,16 @@
 name: Build Frontend
-
 on:
   push:
     branches: [anuja]
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Install Dependencies
         run: cd clinic-frontend && npm install
       - name: Build Frontend
-        run: cd frontend && npm run build
+        run: cd clinic-frontend && npm run build
